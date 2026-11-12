@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+.idea/
+local.properties
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Firma: mai nel repository
+keystore.properties
+*.jks
+*.keystore
+
+# Le build si pubblicano nella sezione Releases di GitHub, non nel repository
+*.apk
+*.aab
