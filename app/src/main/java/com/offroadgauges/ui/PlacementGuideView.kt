@@ -15,10 +15,10 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Animazione in loop (7 s) che mostra come appoggiare il telefono:
- *  - a sinistra, vista dall'alto: il telefono arriva di traverso, ruota e si allinea con il lato lungo
- *    parallelo all'asse dell'auto, bordo superiore verso il parabrezza;
- *  - a destra, vista laterale: il telefono scende e si appoggia piatto, la livella torna a 0 gradi.
+ * Looping animation (7 s) showing how to place the phone:
+ *  - on the left, top view: the phone arrives sideways, rotates and lines up with its long side
+ *    parallel to the car's axis, top edge toward the windshield;
+ *  - on the right, side view: the phone comes down and rests flat, the level returns to 0 degrees.
  */
 class PlacementGuideView(context: Context) : View(context) {
 
@@ -84,13 +84,13 @@ class PlacementGuideView(context: Context) : View(context) {
         val capH = 34 * d
         val hp = h - capH
         val lw = w * 0.56f
-        label(c, "VISTA DALL'ALTO", lw / 2f, 18 * d, 11f, muted)
-        label(c, "VISTA LATERALE", lw + (w - lw) / 2f, 18 * d, 11f, muted)
+        label(c, "TOP VIEW", lw / 2f, 18 * d, 11f, muted)
+        label(c, "SIDE VIEW", lw + (w - lw) / 2f, 18 * d, 11f, muted)
 
         val settled = t > 0.66f
         val fade = 1f - seg(t, 0.93f, 1f)
 
-        // ---------------- vista dall'alto ----------------
+        // ---------------- top view -----------------------
         val topY = 28 * d
         val availH = hp - topY - 4 * d
         val ch = availH
@@ -99,13 +99,13 @@ class PlacementGuideView(context: Context) : View(context) {
         rect.set(ccx - cw / 2f, topY, ccx + cw / 2f, topY + ch)
         c.drawRoundRect(rect, cw * 0.3f, cw * 0.3f, fill(0xFF171D2B.toInt()))
         c.drawRoundRect(rect, cw * 0.3f, cw * 0.3f, stroke(line, 2 * d))
-        // parabrezza e cruscotto
+        // windshield and dashboard
         c.drawLine(ccx - cw * 0.38f, topY + ch * 0.26f, ccx + cw * 0.38f, topY + ch * 0.26f, stroke(line, 2 * d))
         c.drawLine(ccx - cw * 0.44f, topY + ch * 0.33f, ccx + cw * 0.44f, topY + ch * 0.33f, stroke(0xFF3A4152.toInt(), 1.5f * d))
-        label(c, "PARABREZZA", ccx, topY + ch * 0.17f, 9f, muted)
-        label(c, "CONDUCENTE", ccx, topY + ch * 0.92f, 9f, muted)
+        label(c, "WINDSHIELD", ccx, topY + ch * 0.17f, 9f, muted)
+        label(c, "DRIVER", ccx, topY + ch * 0.92f, 9f, muted)
 
-        // vano / supporto del telefono
+        // phone compartment / holder
         val trayCx = ccx
         val trayCy = topY + ch * 0.52f
         val trayW = cw * 0.36f
@@ -113,7 +113,7 @@ class PlacementGuideView(context: Context) : View(context) {
         rect.set(trayCx - trayW / 2f, trayCy - trayH / 2f, trayCx + trayW / 2f, trayCy + trayH / 2f)
         c.drawRoundRect(rect, 6 * d, 6 * d, stroke(withA(gold, 0.8f), 1.5f * d, dashed = true))
 
-        // telefono: arriva di traverso, ruota, si allinea
+        // phone: arrives sideways, rotates, lines up
         val pw = cw * 0.20f
         val ph = pw * 2.1f
         val move = ease(seg(t, 0.02f, 0.32f))
@@ -132,7 +132,7 @@ class PlacementGuideView(context: Context) : View(context) {
         c.drawRoundRect(rect, 5 * d, 5 * d, stroke(if (settled) green else ink, 2 * d))
         rect.set(-pw / 2f + 3 * d, -ph / 2f + 6 * d, pw / 2f - 3 * d, ph / 2f - 6 * d)
         c.drawRoundRect(rect, 3 * d, 3 * d, fill(0xFF0B1020.toInt()))
-        // freccia: bordo superiore del telefono
+        // arrow: top edge of the phone
         path.reset()
         path.moveTo(0f, -ph / 2f + 9 * d)
         path.lineTo(-5 * d, -ph / 2f + 19 * d)
@@ -142,7 +142,7 @@ class PlacementGuideView(context: Context) : View(context) {
         c.restore()
         c.restore()
 
-        // spunta verde quando e' a posto
+        // green check mark when correctly placed
         if (settled) {
             val k = ease(seg(t, 0.66f, 0.74f)) * fade
             val cx = trayCx + trayW / 2f + 4 * d
@@ -155,14 +155,14 @@ class PlacementGuideView(context: Context) : View(context) {
             }
         }
 
-        // ---------------- vista laterale ----------------
+        // ---------------- side view ---------------------
         val x0 = lw + 14 * d
         val x1 = w - 14 * d
         val sy = topY + availH * 0.58f
         val cxs = (x0 + x1) / 2f
         c.drawLine(x0, sy, x1, sy, stroke(line, 3 * d))
-        label(c, "CONDUCENTE", x0, sy + 16 * d, 9f, muted, Paint.Align.LEFT)
-        label(c, "PARABREZZA", x1, sy + 16 * d, 9f, muted, Paint.Align.RIGHT)
+        label(c, "DRIVER", x0, sy + 16 * d, 9f, muted, Paint.Align.LEFT)
+        label(c, "WINDSHIELD", x1, sy + 16 * d, 9f, muted, Paint.Align.RIGHT)
 
         val e = ease(seg(t, 0.30f, 0.62f))
         val ang = 24f * (1f - e)
@@ -179,7 +179,7 @@ class PlacementGuideView(context: Context) : View(context) {
         c.restore()
         c.restore()
 
-        // livella
+        // level
         val ty = sy + 44 * d
         val tw = 120 * d
         rect.set(cxs - tw / 2f, ty - 8 * d, cxs + tw / 2f, ty + 8 * d)
@@ -191,11 +191,11 @@ class PlacementGuideView(context: Context) : View(context) {
         c.drawCircle(bx, ty, 6 * d, fill(if (settled) green else gold))
         label(c, "${ang.roundToInt()}°", cxs, ty + 30 * d, 20f, if (settled) green else ink)
 
-        // didascalia
+        // caption
         val cap = when {
-            t < 0.30f -> "Avvicina il telefono al supporto"
-            t < 0.60f -> "Ruotalo: lato lungo parallelo all'auto"
-            else -> "Piatto, schermo in alto, bordo alto verso il parabrezza"
+            t < 0.30f -> "Move the phone onto the mount"
+            t < 0.60f -> "Rotate it: long side parallel to the car"
+            else -> "Flat, screen up, top edge toward the windshield"
         }
         label(c, cap, w / 2f, h - 12 * d, 13f, ink)
     }

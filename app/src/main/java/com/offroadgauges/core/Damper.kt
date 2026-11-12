@@ -3,9 +3,9 @@ package com.offroadgauges.core
 import kotlin.math.max
 
 /**
- * Smorzatore del secondo ordine (critically damped, stile "SmoothDamp").
- * Simula l'ago di uno strumento meccanico a bagno di glicerina:
- * nessun scatto, nessun overshoot, si assesta in circa 3-4 volte smoothTime.
+ * Second-order damper (critically damped, "SmoothDamp" style).
+ * Simulates the needle of a glycerin-damped mechanical instrument:
+ * no jerking, no overshoot, settles in about 3-4 times smoothTime.
  */
 class Damper(var value: Float = 0f) {
     private var velocity = 0f
@@ -22,7 +22,7 @@ class Damper(var value: Float = 0f) {
         return value
     }
 
-    /** Variante per angoli 0..360: segue sempre l'arco piu' corto. */
+    /** Variant for 0..360 angles: always follows the shortest arc. */
     fun updateAngle(target: Float, dt: Float, smoothTime: Float): Float {
         val delta = ((target - value + 540f) % 360f + 360f) % 360f - 180f
         update(value + delta, dt, smoothTime)

@@ -5,7 +5,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
 
-/** Temperatura esterna da Open-Meteo (gratuito, senza chiave API). Chiamare da thread di background. */
+/** Outside temperature from Open-Meteo (free, no API key). Call from a background thread. */
 object WeatherRepo {
     fun fetchTemperature(lat: Double, lon: Double): Float? {
         var conn: HttpURLConnection? = null

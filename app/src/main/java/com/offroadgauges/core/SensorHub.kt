@@ -30,26 +30,26 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Unico punto di accesso a GPS, barometro e inclinazione. Usato sia dalla UI del telefono
- * sia dalla Session di Android Auto (conteggio dei riferimenti: parte al primo acquire(),
- * si ferma all'ultimo release()).
+ * Single access point to GPS, barometer and tilt. Used by both the phone UI
+ * and the Android Auto Session (reference counted: starts on the first acquire(),
+ * stops on the last release()).
  *
- * Convenzione di montaggio del telefono: piatto, schermo verso l'alto, lato lungo parallelo
- * all'asse dell'auto, bordo superiore verso il parabrezza.
- *   asse X telefono = destra dell'auto, asse Y = avanti, asse Z = alto.
- *   rollio   positivo = auto inclinata verso destra (lato destro in basso)
- *   beccheggio positivo = muso verso l'alto
+ * Phone mounting convention: flat, screen facing up, long side parallel
+ * to the car's axis, top edge toward the windshield.
+ *   phone X axis = car's right, Y axis = forward, Z axis = up.
+ *   roll   positive = car tilted to the right (right side down)
+ *   pitch  positive = nose up
  */
 object SensorHub : SensorEventListener, LocationListener {
 
     enum class CalResult { OK, MOVING, TOO_TILTED, NO_SENSOR }
 
-    /** Offset geoide di riserva (Pianura Padana ~48 m) usato SOLO se ne' Android 14 ne' NMEA danno la quota sul livello del mare. */
+    /** Fallback geoid offset (Po Valley ~48 m) used ONLY if neither Android 14 nor NMEA provide the altitude above sea level. */
     const val FALLBACK_GEOID_M = 48f
 
     private const val G = 9.80665f
     private const val HEADING_WINDOW_NS = 3_000_000_000L
-    private const val MIN_HEADING_SPEED = 1.5f           // m/s (~5,4 km/h)
+    private const val MIN_HEADING_SPEED = 1.5f           // m/s (~5.4 km/h)
     private const val PRESSURE_WINDOW_MS = 60_000L
     private const val MAX_CAL_TILT_DEG = 25f
     private const val FIX_FRESH_MS = 3500L
@@ -62,7 +62,7 @@ object SensorHub : SensorEventListener, LocationListener {
     private val ui = Handler(Looper.getMainLooper())
     private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    // ---- inclinazione -------------------------------------------------------------------
+    // ---- tilt ---------------------------------------------------------------------------
     @Volatile private var gx = 0f
     @Volatile private var gy = 0f
     @Volatile private var gz = 0f
@@ -78,14 +78,14 @@ object SensorHub : SensorEventListener, LocationListener {
     @Volatile var tiltSensorName = "assente"
         private set
 
-    // ---- pressione (media mobile 60 s) --------------------------------------------------
+    // ---- pressure (60 s moving average) -------------------------------------------------
     private val pLock = Any()
     private val pBuf = ArrayDeque<Pair<Long, Float>>()
     private var pSum = 0.0
     @Volatile var pressureAvg: Float? = null
         private set
 
-    // ---- posizione ----------------------------------------------------------------------
+    // ---- position -----------------------------------------------------------------------
     private class HeadingSample(val tNs: Long, val speed: Float, val bearing: Float)
 
     private val hBuf = ArrayDeque<HeadingSample>()
@@ -105,7 +105,7 @@ object SensorHub : SensorEventListener, LocationListener {
     val hasFix: Boolean
         get() = SystemClock.elapsedRealtime() - lastFixMs < FIX_FRESH_MS && lastFixMs != 0L
 
-    // ---- meteo --------------------------------------------------------------------------
+    // ---- weather ------------------------------------------------------------------------
     @Volatile var tempC: Float? = null
         private set
     @Volatile private var tempAtMs = 0L
@@ -115,12 +115,12 @@ object SensorHub : SensorEventListener, LocationListener {
     private var wLat = 0.0
     private var wLon = 0.0
 
-    /** Eta' del dato di temperatura in ms (Long.MAX_VALUE se assente). */
+    /** Age of the temperature data in ms (Long.MAX_VALUE if absent). */
     val tempAgeMs: Long
         get() = if (tempC == null || tempAtMs == 0L) Long.MAX_VALUE else System.currentTimeMillis() - tempAtMs
 
     // ======================================================================================
-    // Ciclo di vita
+    // Lifecycle
     // ======================================================================================
 
     @Synchronized
@@ -187,7 +187,7 @@ object SensorHub : SensorEventListener, LocationListener {
         lastFixMs = 0L
     }
 
-    /** Da chiamare dopo che l'utente ha concesso il permesso di posizione. */
+    /** To be called after the user has granted the location permission. */
     fun restartLocation() {
         ui.post { startLocation() }
     }
@@ -220,7 +220,7 @@ object SensorHub : SensorEventListener, LocationListener {
     }
 
     // ======================================================================================
-    // Inclinometri
+    // Inclinometers
     // ======================================================================================
 
     val tiltAvailable: Boolean get() = tiltReady
@@ -233,14 +233,14 @@ object SensorHub : SensorEventListener, LocationListener {
     private fun rawPitch(): Float {
         val x = if (rotated) -gx else gx
         val y = if (rotated) -gy else gy
-        // Muso in alto => l'asse Y del telefono (verso il parabrezza) punta in alto => gy > 0
+        // Nose up => the phone's Y axis (toward the windshield) points up => gy > 0
         return Math.toDegrees(atan2(y, hypot(x, gz)).toDouble()).toFloat()
     }
 
-    /** Rollio in gradi, gia' azzerato. null se il sensore non e' disponibile. */
+    /** Roll in degrees, already zeroed. null if the sensor is not available. */
     fun roll(): Float? = if (!tiltReady) null else (rawRoll() - rollOff).coerceIn(-90f, 90f)
 
-    /** Beccheggio in gradi, gia' azzerato. null se il sensore non e' disponibile. */
+    /** Pitch in degrees, already zeroed. null if the sensor is not available. */
     fun pitch(): Float? = if (!tiltReady) null else (rawPitch() - pitchOff).coerceIn(-90f, 90f)
 
     var phoneRotated180: Boolean
@@ -252,7 +252,7 @@ object SensorHub : SensorEventListener, LocationListener {
             app?.let { Prefs(it).apply { rotated180 = v; rollOffset = 0f; pitchOffset = 0f } }
         }
 
-    /** Azzera gli inclinometri: telefono fermo, auto in piano. */
+    /** Zeroes the inclinometers: phone still, car level. */
     fun calibrate(): CalResult {
         if (!tiltReady) return CalResult.NO_SENSOR
         if (hasFix && speedMps > 1f) return CalResult.MOVING
@@ -288,8 +288,8 @@ object SensorHub : SensorEventListener, LocationListener {
         val alpha = if (usingGravity) {
             0.12f
         } else {
-            // Accelerometro grezzo: filtro passa-basso piu' pesante e pesato sulla vicinanza a 1 g,
-            // cosi' frenate e curve (|a| lontano da g) non sporcano l'angolo.
+            // Raw accelerometer: heavier low-pass filter, weighted by proximity to 1 g,
+            // so braking and cornering (|a| far from g) do not disturb the angle.
             val mag = sqrt(ax * ax + ay * ay + az * az)
             0.03f * (1f - min(abs(mag - G) / 1.5f, 1f))
         }
@@ -319,8 +319,8 @@ object SensorHub : SensorEventListener, LocationListener {
         val speed = if (loc.hasSpeed()) loc.speed else 0f
         speedMps = speed
 
-        // Quota sul livello del mare (MSL), in ordine di preferenza:
-        // 1) Android 14+ (geoide EGM96 del sistema); 2) campo MSL della frase NMEA GGA; 3) ellissoide - offset fisso.
+        // Altitude above sea level (MSL), in order of preference:
+        // 1) Android 14+ (system EGM96 geoid); 2) MSL field of the NMEA GGA sentence; 3) ellipsoid - fixed offset.
         val msl: Float? = when {
             Build.VERSION.SDK_INT >= 34 && loc.hasMslAltitude() -> loc.mslAltitudeMeters.toFloat()
             nmeaMsl != null && SystemClock.elapsedRealtime() - nmeaAtMs < 5000L -> nmeaMsl
@@ -337,7 +337,7 @@ object SensorHub : SensorEventListener, LocationListener {
             }
         }
 
-        // Direzione di marcia: media vettoriale (pesata sulla velocita') dei bearing GPS degli ultimi 3 s.
+        // Direction of travel: vector average (weighted by speed) of the GPS bearings over the last 3 s.
         val nowNs = loc.elapsedRealtimeNanos
         if (loc.hasBearing() && speed >= MIN_HEADING_SPEED) {
             hBuf.addLast(HeadingSample(nowNs, speed, loc.bearing))
@@ -356,7 +356,7 @@ object SensorHub : SensorEventListener, LocationListener {
             }
             headingLive = true
         } else {
-            headingLive = false   // fermo: si tiene l'ultima direzione nota
+            headingLive = false   // stationary: keep the last known heading
         }
 
         maybeRefreshWeather(loc.latitude, loc.longitude)
@@ -370,7 +370,7 @@ object SensorHub : SensorEventListener, LocationListener {
     }
 
     // ======================================================================================
-    // NMEA: quota MSL dal campo 9 della frase GGA
+    // NMEA: MSL altitude from field 9 of the GGA sentence
     // ======================================================================================
 
     private val nmea = OnNmeaMessageListener { message, _ -> parseGga(message) }
@@ -387,7 +387,7 @@ object SensorHub : SensorEventListener, LocationListener {
     }
 
     // ======================================================================================
-    // Meteo
+    // Weather
     // ======================================================================================
 
     private fun maybeRefreshWeather(lat: Double, lon: Double) {

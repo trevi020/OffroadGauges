@@ -10,8 +10,8 @@ import android.os.Build
 import android.os.IBinder
 
 /**
- * Foreground service (tipo "location"): tiene vivi GPS e sensori mentre Android Auto e' connesso,
- * anche se l'app sul telefono e' in background o lo schermo e' spento.
+ * Foreground service ("location" type): keeps GPS and sensors alive while Android Auto is connected,
+ * even if the phone app is in the background or the screen is off.
  */
 class TelemetryService : Service() {
 
@@ -23,12 +23,12 @@ class TelemetryService : Service() {
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) {
             nm.createNotificationChannel(
-                NotificationChannel(channelId, "Telemetria", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(channelId, "Telemetry", NotificationManager.IMPORTANCE_LOW)
             )
         }
         val notification = Notification.Builder(this, channelId)
-            .setContentTitle("Offroad Gauges attivo")
-            .setContentText("GPS e sensori in uso per Android Auto")
+            .setContentTitle("Offroad Gauges active")
+            .setContentText("GPS and sensors in use for Android Auto")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setOngoing(true)
             .build()
@@ -39,8 +39,8 @@ class TelemetryService : Service() {
                 startForeground(1, notification)
             }
         } catch (e: Exception) {
-            // Permesso di posizione mancante o avvio in background negato: i sensori restano comunque
-            // gestiti dalla Session di Android Auto.
+            // Location permission missing or background start denied: the sensors are still
+            // managed by the Android Auto Session.
             stopSelf()
             return
         }

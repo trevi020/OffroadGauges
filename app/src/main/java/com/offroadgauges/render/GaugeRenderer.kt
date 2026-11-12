@@ -30,22 +30,22 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Disegna le due schermate di gauge su una Surface di Android Auto.
- * Tutto il layout e' definito in uno spazio di design 1280x720 e scalato (con letterbox)
- * nell'area stabile fornita dall'host, quindi funziona su qualsiasi risoluzione di head unit.
+ * Draws the two gauge screens on an Android Auto Surface.
+ * The whole layout is defined in a 1280x720 design space and scaled (letterboxed)
+ * into the stable area provided by the host, so it works on any head unit resolution.
  */
 class GaugeRenderer(private val prefs: Prefs) {
 
-    // Pagine affiancate orizzontalmente: 0 = Ambiente, 1 = Assetto.
-    // pagePos va da 0 a 1 ed e' la posizione di scorrimento corrente (trascinata col dito o animata).
+    // Pages side by side horizontally: 0 = Ambient, 1 = Attitude.
+    // pagePos goes from 0 to 1 and is the current scroll position (dragged by finger or animated).
     @Volatile private var targetPage = 0
     @Volatile private var pagePos = 0f
     @Volatile private var dragging = false
     @Volatile private var lastScrollMs = 0L
     private var gaugeScale = 1f
 
-    // Modalita' di visualizzazione, decisa dalla larghezza dell'area visibile rispetto alla Surface:
-    // intero (3 quadranti, 2 pagine con swipe), 2/3 (2 quadranti scelti), 1/3 (1 quadrante scelto).
+    // Display mode, decided by the width of the visible area relative to the Surface:
+    // full (3 gauges, 2 pages with swipe), 2/3 (2 chosen gauges), 1/3 (1 chosen gauge).
     private enum class Mode { FULL, TWO, ONE }
 
     @Volatile private var mode = Mode.FULL
@@ -63,7 +63,7 @@ class GaugeRenderer(private val prefs: Prefs) {
     private var running = false
     private var lastNs = 0L
 
-    // smorzatori "a glicerina"
+    // "glycerin" dampers
     private val headDamper = Damper()
     private val rollDamper = Damper()
     private val pitchDamper = Damper()
@@ -71,12 +71,12 @@ class GaugeRenderer(private val prefs: Prefs) {
     private var headInit = false
     private var altInit = false
 
-    // messaggio temporaneo
+    // temporary message
     @Volatile private var flashText: String? = null
     @Volatile private var flashOk = true
     @Volatile private var flashUntil = 0L
 
-    // aree toccabili (spazio di design)
+    // touchable areas (design space)
     private val tabAmb = RectF()
     private val tabAss = RectF()
     private val zeroBtn = RectF()
@@ -84,13 +84,13 @@ class GaugeRenderer(private val prefs: Prefs) {
     private var offX = 0f
     private var offY = 0f
 
-    // orologio
+    // clock
     private val cal = Calendar.getInstance()
-    private val dateFmt = SimpleDateFormat("dd/MM EEE", Locale.ITALY)
+    private val dateFmt = SimpleDateFormat("dd/MM EEE", Locale.ENGLISH)
     private var lastDay = -1
     private var dateStr = ""
 
-    // ---- strumenti di disegno ---------------------------------------------------------
+    // ---- drawing tools ----------------------------------------------------------------
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
     private val rect = RectF()
@@ -124,7 +124,7 @@ class GaugeRenderer(private val prefs: Prefs) {
     private val clip = Path().apply { addCircle(0f, 0f, 162f, Path.Direction.CW) }
 
     // ======================================================================================
-    // API pubblica
+    // Public API
     // ======================================================================================
 
     fun attach(s: Surface, w: Int, h: Int) {
@@ -140,7 +140,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         }
     }
 
-    /** Blocca finche' il loop di disegno non ha rilasciato la Surface. */
+    /** Blocks until the drawing loop has released the Surface. */
     fun detach() {
         val latch = CountDownLatch(1)
         handler.post {
@@ -174,7 +174,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         goTo(1 - targetPage)
     }
 
-    /** Trascinamento col dito (convenzione GestureDetector: dito verso sinistra = distanceX positivo). */
+    /** Finger drag (GestureDetector convention: finger to the left = positive distanceX). */
     fun onScroll(distanceX: Float) {
         if (mode != Mode.FULL) return
         val w = max(1f, scale * designW)
@@ -183,7 +183,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         pagePos = (pagePos + distanceX / w).coerceIn(0f, 1f)
     }
 
-    /** Rilascio con scatto: velocityX negativa = dito verso sinistra = pagina successiva. */
+    /** Fling release: negative velocityX = finger to the left = next page. */
     fun onFling(velocityX: Float) {
         dragging = false
         targetPage = when {
@@ -196,10 +196,10 @@ class GaugeRenderer(private val prefs: Prefs) {
     fun requestCalibration() {
         val res = SensorHub.calibrate()
         when (res) {
-            SensorHub.CalResult.OK -> flash("INCLINOMETRI AZZERATI", true)
-            SensorHub.CalResult.MOVING -> flash("FERMA L'AUTO PER AZZERARE", false)
-            SensorHub.CalResult.TOO_TILTED -> flash("TELEFONO NON IN PIANO (OLTRE 25°)", false)
-            SensorHub.CalResult.NO_SENSOR -> flash("SENSORE DI INCLINAZIONE NON DISPONIBILE", false)
+            SensorHub.CalResult.OK -> flash("INCLINOMETERS ZEROED", true)
+            SensorHub.CalResult.MOVING -> flash("STOP THE CAR TO ZERO", false)
+            SensorHub.CalResult.TOO_TILTED -> flash("PHONE NOT LEVEL (OVER 25°)", false)
+            SensorHub.CalResult.NO_SENSOR -> flash("TILT SENSOR NOT AVAILABLE", false)
         }
     }
 
@@ -218,7 +218,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         }
     }
 
-    /** Area toccabile: il rettangolo esteso di 14 unita' in verticale (target piu' comodo in auto). */
+    /** Touchable area: the rectangle extended by 14 units vertically (easier target in the car). */
     private fun hitY(r: RectF, x: Float, y: Float): Boolean =
         x >= r.left && x <= r.right && y >= r.top - 14f && y <= r.bottom + 14f
 
@@ -289,7 +289,7 @@ class GaugeRenderer(private val prefs: Prefs) {
 
         drawBackground(c)
 
-        // scorrimento tra le pagine: rilascio del trascinamento -> pagina piu' vicina, poi animazione
+        // scrolling between pages: drag released -> nearest page, then animation
         if (dragging && SystemClock.uptimeMillis() - lastScrollMs > 160L) {
             dragging = false
             targetPage = if (pagePos > 0.5f) 1 else 0
@@ -300,8 +300,8 @@ class GaugeRenderer(private val prefs: Prefs) {
             if (abs(targetPage - pagePos) < 0.0005f) pagePos = targetPage.toFloat()
         }
 
-        // Area utilizzabile: in orizzontale l'area visibile (esclude le schede affiancate, es. musica),
-        // in verticale tutta la Surface.
+        // Usable area: horizontally the visible area (excludes side-by-side cards, e.g. music),
+        // vertically the whole Surface.
         val vis = visible
         var left = 0
         var right = sw
@@ -318,8 +318,8 @@ class GaugeRenderer(private val prefs: Prefs) {
         }
         mode = m
 
-        // Spazio di design: altezza fissa 520, larghezza adattata. Testi e pulsanti hanno la stessa
-        // dimensione apparente in tutte le modalita'.
+        // Design space: fixed height 520, adapted width. Texts and buttons have the same
+        // apparent size in all modes.
         val hh = 520f
         val sc = sh / hh
         val ww = aw / sc
@@ -328,7 +328,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         offY = 0f
         designW = ww
 
-        // quadranti scelti dall'utente per le modalita' parziali (ordinati, sempre distinti)
+        // gauges chosen by the user for the partial modes (ordered, always distinct)
         val sel: IntArray = when (m) {
             Mode.FULL -> IntArray(0)
             Mode.TWO -> {
@@ -343,7 +343,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         zeroVisible = zeroNeeded
         layoutBar(ww, hh, m)
 
-        // Gauge il piu' grandi possibile: limitati da larghezza (n cerchi) o altezza (meno titoli e barra)
+        // Gauges as large as possible: limited by width (n circles) or height (minus titles and bar)
         val margin = 14f
         val gap = 14f
         val topPad = 8f
@@ -395,20 +395,20 @@ class GaugeRenderer(private val prefs: Prefs) {
         c.restore()
     }
 
-    /** 0 temperatura, 1 bussola, 2 orologio, 3 altimetro, 4 rollio, 5 beccheggio. */
+    /** 0 temperature, 1 compass, 2 clock, 3 altimeter, 4 roll, 5 pitch. */
     private fun drawGaugeById(c: Canvas, id: Int, cx: Float, cy: Float) {
         when (id) {
-            0 -> gauge(c, cx, cy, "TEMPERATURA") { drawTemp(it) }
-            1 -> gauge(c, cx, cy, "BUSSOLA") { drawCompass(it) }
-            2 -> gauge(c, cx, cy, "OROLOGIO") { drawClock(it) }
-            3 -> gauge(c, cx, cy, "ALTIMETRO") { drawAltimeter(it) }
-            4 -> gauge(c, cx, cy, "ROLLIO") { drawTilt(it, true) }
-            else -> gauge(c, cx, cy, "BECCHEGGIO") { drawTilt(it, false) }
+            0 -> gauge(c, cx, cy, "TEMPERATURE") { drawTemp(it) }
+            1 -> gauge(c, cx, cy, "COMPASS") { drawCompass(it) }
+            2 -> gauge(c, cx, cy, "CLOCK") { drawClock(it) }
+            3 -> gauge(c, cx, cy, "ALTIMETER") { drawAltimeter(it) }
+            4 -> gauge(c, cx, cy, "ROLL") { drawTilt(it, true) }
+            else -> gauge(c, cx, cy, "PITCH") { drawTilt(it, false) }
         }
     }
 
     // ======================================================================================
-    // Helper di disegno
+    // Drawing helpers
     // ======================================================================================
 
     private val GOLD = 0xFFD8B574.toInt()
@@ -473,7 +473,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         return rect
     }
 
-    /** Linea radiale all'angolo [deg] (0 = ore 3, senso orario) tra i raggi r0 e r1. */
+    /** Radial line at angle [deg] (0 = 3 o'clock, clockwise) between radii r0 and r1. */
     private fun radial(c: Canvas, deg: Float, r0: Float, r1: Float, paint: Paint) {
         val a = Math.toRadians(deg.toDouble())
         val ca = cos(a).toFloat()
@@ -504,7 +504,7 @@ class GaugeRenderer(private val prefs: Prefs) {
     }
 
     // ======================================================================================
-    // Sfondo e stato
+    // Background and status
     // ======================================================================================
 
     private var bgBitmap: Bitmap? = null
@@ -512,10 +512,10 @@ class GaugeRenderer(private val prefs: Prefs) {
     private var bgH2 = 0
 
     /**
-     * Sfondo a gradiente (nero -> blu notte -> nero) costruito una volta sola con dithering.
-     * Il video H.264 di Android Auto (8 bit, quantizzato) farebbe comparire fasce nei gradienti lenti;
-     * un rumore fine (+-NOISE_LEVELS livelli, uguale su R/G/B quindi solo luminanza, a blocchi 2x2)
-     * rompe le fasce e sopravvive a compressione e sottocampionamento del colore.
+     * Gradient background (black -> midnight blue -> black) built only once, with dithering.
+     * The H.264 video of Android Auto (8 bit, quantized) would show banding in slow gradients;
+     * a fine noise (+-NOISE_LEVELS levels, identical on R/G/B so luminance only, in 2x2 blocks)
+     * breaks the bands and survives compression and color subsampling.
      */
     private fun buildBackground(w: Int, h: Int): Bitmap {
         val noiseLevels = 3f
@@ -529,7 +529,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         val rnd = java.util.Random(1234L)
         val nw = (w + 1) / 2
         val nh = (h + 1) / 2
-        // rumore triangolare (somma di due uniformi): piu' naturale del rumore uniforme
+        // triangular noise (sum of two uniforms): more natural than uniform noise
         val noise = FloatArray(nw * nh) { (rnd.nextFloat() + rnd.nextFloat() - 1f) * noiseLevels }
         val pix = IntArray(w * h)
         for (y in 0 until h) {
@@ -581,12 +581,12 @@ class GaugeRenderer(private val prefs: Prefs) {
         if (SensorHub.hasFix) {
             text(c, "GPS OK", 36f, 48f, 18f, GOLD, bold = true, spacing = 3f, align = Paint.Align.LEFT)
         } else {
-            text(c, "NESSUN FIX GPS", 36f, 48f, 18f, RED, bold = true, spacing = 3f, align = Paint.Align.LEFT)
+            text(c, "NO GPS FIX", 36f, 48f, 18f, RED, bold = true, spacing = 3f, align = Paint.Align.LEFT)
         }
     }
 
     // ======================================================================================
-    // Schermata AMBIENTE
+    // AMBIENT screen
     // ======================================================================================
 
     private fun drawTemp(c: Canvas) {
@@ -601,13 +601,13 @@ class GaugeRenderer(private val prefs: Prefs) {
         val tk = stroke(0xFF3A4152.toInt(), 2f)
         for (i in 0..27) radial(c, 135f + i * 10f, 112f, 124f, tk)
 
-        text(c, "ESTERNA", 0f, -82f, 18f, GOLD, spacing = 4f)
+        text(c, "OUTSIDE", 0f, -82f, 18f, GOLD, spacing = 4f)
         val big = if (t == null) "--" else t.roundToInt().toString()
         val nw = measure(big, 96f)
-        // cifre centrate esattamente nel tondo (orizzontale e verticale); l'unita' sta a destra senza spostarle
+        // digits centered exactly in the dial (horizontally and vertically); the unit sits to the right without shifting them
         text(c, big, 0f, 34f, 96f, TEXT)
         text(c, "°C", nw / 2f + 6f, -8f, 34f, GOLD, align = Paint.Align.LEFT)
-        // estremi scala centrati in corrispondenza della fine della pista (a 135° e 45°), spostati dentro
+        // scale ends centered at the end of the track (at 135° and 45°), shifted inward
         text(c, "-20", -68f, 74f, 18f, DIM)
         text(c, "50", 68f, 74f, 18f, DIM)
     }
@@ -649,7 +649,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         val num = if (has) deg.toString() else "---"
         val nw = measure(num, 64f)
         val col = if (has) TEXT else DIM
-        // cifre centrate nel tondo; il simbolo ° sta a destra senza spostarle
+        // digits centered in the dial; the ° symbol sits to the right without shifting them
         text(c, num, 0f, 23f, 64f, col)
         text(c, "°", nw / 2f + 2f, 23f, 64f, col, align = Paint.Align.LEFT)
     }
@@ -659,7 +659,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         val day = cal.get(Calendar.DAY_OF_YEAR)
         if (day != lastDay) {
             lastDay = day
-            dateStr = dateFmt.format(cal.time).uppercase(Locale.ITALY)
+            dateStr = dateFmt.format(cal.time).uppercase(Locale.ENGLISH)
         }
         val s = cal.get(Calendar.SECOND) + cal.get(Calendar.MILLISECOND) / 1000f
         val m = cal.get(Calendar.MINUTE) + s / 60f
@@ -682,7 +682,7 @@ class GaugeRenderer(private val prefs: Prefs) {
     }
 
     // ======================================================================================
-    // Schermata ASSETTO
+    // ATTITUDE screen
     // ======================================================================================
 
     private fun drawAltimeter(c: Canvas) {
@@ -693,7 +693,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         c.drawPath(waveLine, stroke(GOLD, 3f))
         c.restore()
 
-        text(c, "ALTITUDINE", 0f, -100f, 18f, GOLD, spacing = 4f)
+        text(c, "ALTITUDE", 0f, -100f, 18f, GOLD, spacing = 4f)
         val has = hub.altitude != null
         val big = if (has) altDamper.value.roundToInt().toString() else "---"
         val nw = measure(big, 68f)
@@ -704,7 +704,7 @@ class GaugeRenderer(private val prefs: Prefs) {
 
         val pr = hub.pressureAvg
         text(c, if (pr != null) "${pr.roundToInt()} hPa" else "--- hPa", 0f, 58f, 40f, if (pr != null) TEXT else DIM)
-        text(c, "BAROMETRO", 0f, 90f, 18f, GOLD, spacing = 4f)
+        text(c, "BAROMETER", 0f, 90f, 18f, GOLD, spacing = 4f)
     }
 
     private fun drawTilt(c: Canvas, isRoll: Boolean) {
@@ -712,9 +712,9 @@ class GaugeRenderer(private val prefs: Prefs) {
         val value = if (isRoll) rollDamper.value else pitchDamper.value
         val shown = value.coerceIn(-40f, 40f)
 
-        // Orizzonte artificiale: terreno (colore + linea) e vettura ruotano insieme, come un corpo unico.
-        // Rollio: auto vista da dietro, lato destro in basso = senso orario.
-        // Beccheggio: auto vista di lato, muso a destra, muso in alto = senso antiorario.
+        // Artificial horizon: terrain (color + line) and vehicle rotate together, as a single body.
+        // Roll: car seen from behind, right side down = clockwise.
+        // Pitch: car seen from the side, nose to the right, nose up = counterclockwise.
         c.save()
         c.clipPath(clip)
         c.rotate(if (isRoll) shown else -shown)
@@ -724,7 +724,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         if (isRoll) drawCarRear(c) else drawCarSide(c)
         c.restore()
 
-        // scala fissa -40..+40 su entrambi i lati
+        // fixed scale -40..+40 on both sides
         val minor = stroke(TICK, 2f)
         for (side in intArrayOf(1, -1)) {
             var a = -40
@@ -766,15 +766,15 @@ class GaugeRenderer(private val prefs: Prefs) {
 
     private val TIRE = 0xFF3A4458.toInt()
 
-    /** Jeep Willys vista da dietro: ruote sotto la scocca, tanica con X a sinistra, ruota di scorta a destra, paraurti con rostri. */
+    /** Willys Jeep seen from behind: wheels under the body, jerry can with X on the left, spare wheel on the right, bumper with spikes. */
     private fun drawCarRear(c: Canvas) {
         val dark = 0xFF252C3B.toInt()
-        // parabrezza in due metà, visibile sopra la scocca
+        // windshield in two halves, visible above the body
         rect.set(-42f, -96f, 42f, -58f)
         c.drawRoundRect(rect, 3f, 3f, fill(GLASS))
         c.drawRoundRect(rect, 3f, 3f, stroke(CAR2, 4f))
         c.drawLine(0f, -96f, 0f, -58f, stroke(CAR2, 3f))
-        // ruote: sotto la scocca, simmetriche, battistrada a tacche
+        // wheels: under the body, symmetric, notched tread
         for (side in intArrayOf(-1, 1)) {
             rect.set(if (side < 0) -48f else 26f, -36f, if (side < 0) -26f else 48f, 0f)
             c.drawRoundRect(rect, 5f, 5f, fill(TIRE))
@@ -785,29 +785,29 @@ class GaugeRenderer(private val prefs: Prefs) {
                 y += 7f
             }
         }
-        // pannello posteriore rialzato con bordo superiore
+        // raised rear panel with upper edge
         rect.set(-52f, -62f, 52f, -26f); c.drawRoundRect(rect, 4f, 4f, fill(CAR))
         rect.set(-52f, -62f, 52f, -56f); c.drawRoundRect(rect, 3f, 3f, fill(CAR2))
-        // tanica a sinistra con la X in rilievo
+        // jerry can on the left with embossed X
         rect.set(-44f, -54f, -24f, -30f); c.drawRoundRect(rect, 2f, 2f, fill(0xFFB9B39E.toInt()))
         val cross = stroke(0xFF7A745F.toInt(), 2f)
         c.drawLine(-42f, -52f, -26f, -32f, cross)
         c.drawLine(-26f, -52f, -42f, -32f, cross)
-        // ruota di scorta a destra
+        // spare wheel on the right
         c.drawCircle(16f, -44f, 15f, fill(TIRE))
         c.drawCircle(16f, -44f, 15f, stroke(dark, 2f))
         c.drawCircle(16f, -44f, 8f, fill(CAR2))
         c.drawCircle(16f, -44f, 3f, fill(TIRE))
-        // fanali
+        // headlights
         rect.set(-50f, -40f, -45f, -32f); c.drawRoundRect(rect, 2f, 2f, fill(RED))
         rect.set(45f, -40f, 50f, -32f); c.drawRoundRect(rect, 2f, 2f, fill(RED))
-        // paraurti con due rostri
+        // bumper with two spikes
         rect.set(-56f, -28f, 56f, -21f); c.drawRoundRect(rect, 2f, 2f, fill(CAR2))
         rect.set(-36f, -32f, -29f, -21f); c.drawRoundRect(rect, 2f, 2f, fill(CAR2))
         rect.set(29f, -32f, 36f, -21f); c.drawRoundRect(rect, 2f, 2f, fill(CAR2))
     }
 
-    /** Jeep Willys vista di lato, muso a destra: cassone alto, abitacolo aperto, cofano piatto, parabrezza dritto. */
+    /** Willys Jeep seen from the side, nose to the right: tall tub, open cabin, flat hood, upright windshield. */
     private fun drawCarSide(c: Canvas) {
         val arch = fill(0xFF222A3C.toInt())
         path.reset()
@@ -815,18 +815,18 @@ class GaugeRenderer(private val prefs: Prefs) {
         path.lineTo(-6f, -36f); path.lineTo(20f, -36f); path.lineTo(20f, -46f)
         path.lineTo(74f, -46f); path.lineTo(80f, -40f); path.lineTo(80f, -16f); path.close()
         c.drawPath(path, fill(CAR))
-        // passaruota
+        // wheel arch
         c.drawCircle(-48f, -18f, 22f, arch)
         c.drawCircle(52f, -18f, 22f, arch)
-        // parabrezza dritto leggermente inclinato indietro
+        // upright windshield, tilted slightly backward
         c.drawLine(22f, -46f, 17f, -72f, stroke(CAR2, 4f, Paint.Cap.ROUND))
-        // schienale del sedile
+        // seat backrest
         rect.set(-34f, -60f, -24f, -38f); c.drawRoundRect(rect, 3f, 3f, fill(CAR2))
-        // tanica sul retro
+        // jerry can at the rear
         rect.set(-93f, -42f, -84f, -22f); c.drawRoundRect(rect, 2f, 2f, fill(CAR2))
-        // faro anteriore tondo
+        // round front headlight
         c.drawCircle(74f, -36f, 4.5f, fill(0xFFFFE9A8.toInt()))
-        // ruote
+        // wheels
         for (x in floatArrayOf(-48f, 52f)) {
             c.drawCircle(x, -18f, 18f, fill(TIRE))
             c.drawCircle(x, -18f, 9f, fill(CAR2))
@@ -835,17 +835,17 @@ class GaugeRenderer(private val prefs: Prefs) {
     }
 
     // ======================================================================================
-    // Schede in basso, pulsante azzera e messaggi
+    // Bottom cards, zero button and messages
     // ======================================================================================
 
     private val tabH = 46f
     private val tabBottom = 12f
 
-    /** Calcola i rettangoli di schede e pulsante azzera nello spazio di design (larghezza w, altezza h). */
+    /** Computes the rectangles of the cards and of the zero button in the design space (width w, height h). */
     private fun layoutBar(w: Float, h: Float, m: Mode) {
         val top = h - tabBottom - tabH
         if (m == Mode.FULL) {
-            // su aree strette comprime schede e pulsante perche' il pulsante azzera non esca dallo schermo
+            // on narrow areas, compresses cards and button so the zero button does not go off screen
             val f = min(1f, (w / 2f - 16f) / 456f)
             val tabW = 200f * f
             val left = w / 2f - tabW - 2f
@@ -854,7 +854,7 @@ class GaugeRenderer(private val prefs: Prefs) {
             val zl = tabAss.right + 36f * f
             zeroBtn.set(zl, top, zl + 220f * f, top + tabH)
         } else {
-            // modalita' parziali: niente schede, solo l'eventuale pulsante azzera, centrato
+            // partial modes: no cards, only the zero button if present, centered
             tabAmb.setEmpty()
             tabAss.setEmpty()
             val zw = min(220f, w - 28f)
@@ -866,15 +866,15 @@ class GaugeRenderer(private val prefs: Prefs) {
         val amb = pos < 0.5f
         c.drawRect(tabAmb, fill(if (amb) 0xFF3B3A36.toInt() else 0xFF25262B.toInt()))
         c.drawRect(tabAss, fill(if (!amb) 0xFF3B3A36.toInt() else 0xFF25262B.toInt()))
-        text(c, "AMBIENTE", tabAmb.centerX(), tabAmb.centerY() + 7f, 20f, if (amb) GOLD else TEXT, bold = amb, spacing = 3f)
-        text(c, "ASSETTO", tabAss.centerX(), tabAss.centerY() + 7f, 20f, if (!amb) GOLD else TEXT, bold = !amb, spacing = 3f)
-        // barretta oro che segue lo scorrimento delle pagine
+        text(c, "AMBIENT", tabAmb.centerX(), tabAmb.centerY() + 7f, 20f, if (amb) GOLD else TEXT, bold = amb, spacing = 3f)
+        text(c, "ATTITUDE", tabAss.centerX(), tabAss.centerY() + 7f, 20f, if (!amb) GOLD else TEXT, bold = !amb, spacing = 3f)
+        // gold bar that follows the page scrolling
         val ix = tabAmb.left + (tabAss.left - tabAmb.left) * pos
         rect.set(ix, tabAmb.bottom - 3f, ix + tabAmb.width(), tabAmb.bottom)
         c.drawRect(rect, fill(GOLD))
     }
 
-    /** Pulsante azzera: fa parte della pagina Assetto e scorre insieme a lei. */
+    /** Zero button: part of the Attitude page and scrolls together with it. */
     private fun drawZeroButton(c: Canvas) {
         val r = zeroBtn.height() / 2f
         c.drawRoundRect(zeroBtn, r, r, fill(0xFF1A1C22.toInt()))
@@ -887,7 +887,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         c.drawLine(ix, iy + 5f, ix, iy + 11f, ln)
         c.drawLine(ix - 11f, iy, ix - 5f, iy, ln)
         c.drawLine(ix + 5f, iy, ix + 11f, iy, ln)
-        text(c, "AZZERA 0°", ix + 22f, iy + 7f, 20f, GOLD, bold = true, spacing = 3f, align = Paint.Align.LEFT)
+        text(c, "ZERO 0°", ix + 22f, iy + 7f, 20f, GOLD, bold = true, spacing = 3f, align = Paint.Align.LEFT)
     }
 
     private fun drawFlash(c: Canvas, dw: Float, h: Float) {
@@ -897,7 +897,7 @@ class GaugeRenderer(private val prefs: Prefs) {
         val f = min(1f, remain / 500f)
         var sz = 22f
         val mw = measure(msg, sz, true, 2f)
-        if (mw + 56f > dw - 20f) sz = sz * (dw - 76f) / mw   // messaggio lungo su area stretta: riduce il carattere
+        if (mw + 56f > dw - 20f) sz = sz * (dw - 76f) / mw   // long message on a narrow area: reduces the font size
         val w = measure(msg, sz, true, 2f) + 56f
         val bottom = h - tabBottom - tabH - 10f
         rect.set(dw / 2f - w / 2f, bottom - 42f, dw / 2f + w / 2f, bottom)

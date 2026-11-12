@@ -6,8 +6,8 @@ import androidx.car.app.validation.HostValidator
 
 class GaugeCarAppService : CarAppService() {
 
-    // Per uso personale/test accetta qualsiasi host. Per una distribuzione pubblica
-    // sostituire con una lista di host fidati (HostValidator.Builder).
+    // For personal use/testing it accepts any host. For a public release,
+    // replace with a list of trusted hosts (HostValidator.Builder).
     override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
 
     override fun onCreateSession(): Session = GaugeSession()

@@ -1,232 +1,239 @@
-# Offroad Gauges per Android Auto
+# Offroad Gauges for Android Auto
 
-App Android che porta sul display di **Android Auto** i classici strumenti da fuoristrada in versione digitale:
-temperatura esterna, bussola, orologio, altimetro con barometro e inclinometri di rollio e beccheggio.
-Lo stile dei quadranti è ispirato alla strumentazione di un fuoristrada moderno (cielo notturno, cerchi scuri con
-bordo oro, tacche bianche). Il progetto è indipendente e non ha alcun legame con case automobilistiche.
+![Version](https://img.shields.io/badge/version-0.6%20beta-D4AF37?style=for-the-badge)
+![License](https://img.shields.io/badge/license-MIT-2EA44F?style=for-the-badge)
+![Android Auto](https://img.shields.io/badge/Android%20Auto-Car%20App%20Library%201.4.0-4285F4?style=for-the-badge&logo=androidauto&logoColor=white)
+![Platform](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-8.7-02303A?style=for-the-badge&logo=gradle&logoColor=white)
+![Status](https://img.shields.io/badge/status-experimental-E8590C?style=for-the-badge)
 
-Tutti i dati vengono letti dal **telefono** (GPS, barometro, sensore di gravità): l'auto serve solo come schermo.
+🇬🇧 English · [🇮🇹 Italiano](README.it.md)
 
-> Stato del progetto: funzionante e provato su Android Auto, ma pensato per uso personale e sperimentale.
-> La versione corrente è indicata in `app/build.gradle.kts` (`versionName`).
+An Android app that brings classic off-road instruments to the **Android Auto** display in digital form:
+outside temperature, compass, clock, altimeter with barometer, and roll and pitch inclinometers.
+The look of the gauges is inspired by the instrument cluster of a modern off-roader (night-sky background, dark
+circles with gold rims, white ticks). The project is independent and has no connection with any car maker.
+
+All data comes from the **phone** (GPS, barometer, gravity sensor): the car is only the screen.
+
+> Project status: working and tested on Android Auto, but meant for personal and experimental use.
+> The current version is set in `app/build.gradle.kts` (`versionName`).
 
 ---
 
-## Cosa mostra
+## What it shows
 
-L'app disegna direttamente sulla Surface di Android Auto (come un'app di navigazione). Con lo schermo intero ci sono
-due pagine affiancate, ciascuna con tre quadranti circolari; si passa dall'una all'altra con lo swipe o con le
-schede in basso.
+The app draws directly on the Android Auto Surface (like a navigation app). On a full screen there are two
+side-by-side pages, each with three circular gauges; switch between them by swiping or with the tabs at the bottom.
 
-| Pagina | Quadrante | Dato |
+| Page | Gauge | Data |
 |---|---|---|
-| **Ambiente** | Temperatura | Temperatura esterna da internet, per la posizione GPS corrente |
-| | Bussola | Direzione di marcia (media degli ultimi 3 secondi di GPS), con rotazione fluida |
-| | Orologio | Orologio a lancette con data |
-| **Assetto** | Altimetro | Quota sul livello del mare (GPS) e, sotto, la pressione barometrica |
-| | Rollio | Inclinometro laterale a orizzonte artificiale |
-| | Beccheggio | Inclinometro longitudinale a orizzonte artificiale |
+| **Ambient** | Temperature | Outside temperature from the internet, for the current GPS position |
+| | Compass | Direction of travel (average of the last 3 seconds of GPS), smoothly rotating |
+| | Clock | Analog clock with date |
+| **Attitude** | Altimeter | Altitude above sea level (GPS) and, below it, barometric pressure |
+| | Roll | Lateral inclinometer, artificial-horizon style |
+| | Pitch | Longitudinal inclinometer, artificial-horizon style |
 
-Nei due inclinometri il terreno (colore e linea) e la vettura, stilizzata come una Jeep Willys, ruotano insieme
-come un orizzonte artificiale. La scala va da -40° a +40°.
+In both inclinometers the ground (color and line) and the vehicle, drawn as a stylized Willys Jeep, rotate together
+like an artificial horizon. The scale goes from -40° to +40°.
 
-### Visualizzazione parziale (app affiancata ad altre)
+### Partial view (app shown next to other apps)
 
-Quando Android Auto affianca l'app ad altre, per esempio la musica, l'app riconosce lo spazio disponibile:
+When Android Auto shows the app next to others, for example music, the app detects the available space:
 
-- **circa 2/3 dello schermo:** mostra **2 quadranti** scelti dall'utente;
-- **circa 1/3 dello schermo:** mostra **1 quadrante** scelto dall'utente;
-- in questi casi non ci sono pagine né schede.
+- **about 2/3 of the screen:** shows **2 gauges** chosen by the user;
+- **about 1/3 of the screen:** shows **1 gauge** chosen by the user;
+- in these cases there are no pages or tabs.
 
-I quadranti si scelgono nella schermata dell'app sul telefono, sezione "Visualizzazione parziale": qualsiasi
-combinazione di 2 tra i 6 quadranti per la vista a 2/3, uno solo per la vista a 1/3. La scelta resta salvata.
-Se tra quelli scelti c'è rollio o beccheggio, compare anche il pulsante **AZZERA 0°**.
-
----
-
-## Come funziona
-
-### Bussola
-La direzione è la media vettoriale, pesata sulla velocità, dei rilevamenti GPS (bearing) degli ultimi 3 secondi,
-considerati solo sopra circa 5 km/h. Da fermo mantiene l'ultima direzione nota. La lancetta è filtrata con uno
-smorzatore del secondo ordine che simula uno strumento a bagno di glicerina: nessuno scatto e nessun rimbalzo.
-
-### Temperatura esterna
-Viene letta da [Open-Meteo](https://open-meteo.com) (gratuito, senza chiave API) alla posizione GPS corrente.
-Si aggiorna ogni 10 minuti o dopo 10 km di spostamento, con nuovi tentativi ogni minuto finché manca il dato.
-L'ultimo valore viene salvato e riutilizzato per qualche ora. Serve la connessione dati del telefono.
-
-### Altimetro e pressione
-- **Quota:** si usa l'altitudine sul livello del mare, in ordine di preferenza: quella fornita da Android 14 o
-  successivi, il campo di quota della frase NMEA GGA, oppure la quota ellissoidale GPS meno 48 m
-  (correzione di ripiego pensata per la Pianura Padana, costante `FALLBACK_GEOID_M` in `SensorHub.kt`).
-  Il valore è filtrato e animato.
-- **Pressione:** barometro del telefono, media mobile sugli ultimi 60 secondi, in hPa. Se il telefono non ha il
-  barometro il valore resta vuoto.
-
-### Inclinometri
-Usano il sensore di **gravità** del telefono (fusione con il giroscopio), con ripiego sull'accelerometro filtrato.
-
-**Posizionamento del telefono**: piatto, schermo verso l'alto, **lato lungo parallelo all'asse dell'auto** e bordo
-superiore verso il parabrezza (come sulla maggior parte dei piani di ricarica e dei supporti). Se è girato di 180°
-si attiva l'opzione nell'app. Nell'app sul telefono c'è una guida animata che mostra come appoggiarlo.
-
-Convenzione dei segni: rollio positivo = lato destro in basso, beccheggio positivo = muso in alto.
-
-**Azzeramento:** a telefono fermo e auto in piano si preme **AZZERA 0°**, dallo schermo di Android Auto (pagina
-Assetto) oppure dall'app sul telefono. L'azzeramento viene rifiutato se l'auto si sta muovendo o se il telefono è
-inclinato di oltre 25°. Il valore resta salvato.
-
-### Interfaccia su Android Auto
-- L'app è un'app di **navigazione** (Car App Library, `NavigationTemplate`) perché è l'unico tipo che dà accesso a
-  una Surface su cui disegnare liberamente.
-- Lo **swipe** richiede il pulsante "Pan" nel template, che sui touchscreen non viene mostrato. Sulle unità senza
-  touch resta il cambio pagina con la schermata o con il pulsante nella barra azioni.
-- Il template richiede almeno un'azione nella barra in alto: ce n'è una sola, con icona trasparente, che cambia
-  pagina.
-- Sfondo con dithering: il gradiente scuro viene costruito con un leggero rumore per evitare le fasce
-  (banding) che comparirebbero con la compressione video di Android Auto.
+The gauges are chosen in the phone app, "Partial view" section: any combination of 2 out of the 6 gauges for the
+2/3 view, a single one for the 1/3 view. The choice is saved. If roll or pitch is among the selected gauges, the
+**ZERO 0°** button also appears.
 
 ---
 
-## Requisiti
+## How it works
 
-- Telefono Android 8.0 o successivo (`minSdk 26`), con GPS. Barometro e sensore di gravità consigliati.
-- App **Android Auto** installata e un'auto compatibile, oppure il Desktop Head Unit.
-- Per compilare: Android Studio (Koala o successivo) con JDK 17 o 21. Il progetto usa Gradle 8.7, Android Gradle
-  Plugin 8.5.2, Kotlin 1.9.24 e `androidx.car.app:app:1.4.0`.
+### Compass
+The heading is the speed-weighted vector average of the GPS bearings of the last 3 seconds, considered only above
+about 5 km/h. When stopped it keeps the last known heading. The needle is filtered with a second-order damper that
+simulates a glycerin-filled instrument: no jumps and no overshoot.
+
+### Outside temperature
+Read from [Open-Meteo](https://open-meteo.com) (free, no API key) at the current GPS position. It refreshes every
+10 minutes or after 10 km of movement, retrying every minute while there is no data. The last value is saved and
+reused for a few hours. The phone needs a data connection.
+
+### Altimeter and pressure
+- **Altitude:** altitude above sea level (MSL) is taken, in order of preference, from Android 14 or later, from the
+  altitude field of the NMEA GGA sentence, or from the GPS ellipsoidal height minus 48 m (a fallback correction
+  tuned for the Po Plain in Italy, constant `FALLBACK_GEOID_M` in `SensorHub.kt`). The value is filtered and animated.
+- **Pressure:** phone barometer, moving average over the last 60 seconds, in hPa. If the phone has no barometer the
+  value stays empty.
+
+### Inclinometers
+They use the phone's **gravity** sensor (gyroscope fusion), falling back to the filtered accelerometer.
+
+**Phone placement:** flat, screen up, **long side parallel to the car's axis** and top edge toward the windshield
+(as on most charging pads and mounts). If it is rotated by 180°, enable the option in the app. The phone app
+includes an animated guide that shows how to place it.
+
+Sign convention: positive roll = right side down, positive pitch = nose up.
+
+**Zeroing:** with the phone still and the car on level ground, press **ZERO 0°** on the Android Auto screen
+(Attitude page) or in the phone app. Zeroing is refused if the car is moving or the phone is tilted by more than
+25°. The value is saved.
+
+### Android Auto interface
+- The app is a **navigation** app (Car App Library, `NavigationTemplate`) because it is the only template type that
+  gives access to a Surface for free drawing.
+- **Swipe** requires the "Pan" button in the template, which is not shown on touchscreens. On units without touch,
+  pages can still be switched with the on-screen tabs or with the button in the action strip.
+- The template requires at least one action in the top bar: there is exactly one, with a transparent icon, that
+  switches page.
+- Dithered background: the dark gradient is built with slight noise to avoid the banding that Android Auto's video
+  compression would otherwise show.
 
 ---
 
-## Installazione
+## Requirements
 
-### 1. Compilare dai sorgenti
+- Android 8.0 or later phone (`minSdk 26`) with GPS. Barometer and gravity sensor recommended.
+- **Android Auto** app installed and a compatible car, or the Desktop Head Unit.
+- To build: Android Studio (Koala or later) with JDK 17 or 21. The project uses Gradle 8.7, Android Gradle Plugin
+  8.5.2, Kotlin 1.9.24 and `androidx.car.app:app:1.4.0`.
 
-1. Clona il repository e aprilo in Android Studio. La sincronizzazione Gradle scarica da sola le dipendenze.
-   Se Android Studio segnala un JDK non compatibile (per esempio il 25), seleziona il JDK 21 integrato.
-2. Collega il telefono con il debug USB attivo e premi **Run**, oppure da terminale:
+---
+
+## Installation
+
+### 1. Build from source
+
+1. Clone the repository and open it in Android Studio. Gradle sync downloads the dependencies by itself.
+   If Android Studio reports an incompatible JDK (for example 25), select the bundled JDK 21.
+2. Connect the phone with USB debugging enabled and press **Run**, or from a terminal:
 
 ```
 ./gradlew assembleDebug        # Windows: gradlew.bat assembleDebug
 ```
 
-   L'APK si trova in `app/build/outputs/apk/debug/app-debug.apk`.
+   The APK is in `app/build/outputs/apk/debug/app-debug.apk`.
 
-### 2. Installare un APK dalle Releases
-Scarica l'APK dalla sezione **Releases** del repository e installalo sul telefono, consentendo l'installazione da
-questa origine. Se passi da una versione di debug a una firmata, o viceversa, disinstalla prima l'app: le firme
-sono diverse.
+### 2. Install an APK from Releases
+Download the APK from the repository's **Releases** section and install it on the phone, allowing installation from
+that source. If you switch from a debug to a signed build, or the other way round, uninstall the app first: the
+signatures differ.
 
-### 3. Abilitare le app fuori dal Play Store in Android Auto
-1. In Android Auto tocca 10 volte "Versione" per attivare le **Impostazioni sviluppatore**.
-2. Dal menu in alto a destra apri *Impostazioni sviluppatore* e attiva **Origini sconosciute**.
+### 3. Enable apps from outside the Play Store in Android Auto
+1. In Android Auto tap "Version" 10 times to enable **Developer settings**.
+2. From the top-right menu open *Developer settings* and enable **Unknown sources**.
 
-### 4. Perché l'app può non comparire nell'elenco dell'auto
+### 4. Why the app may not appear in the car's app list
 
-Su un'auto reale, un'app installata a mano può risultare nell'elenco delle app di Android Auto ma non comparire in
-*Personalizza elenco app*. Può anche partire da sola come ultima app usata e poi non essere più richiamabile se
-scegli un'altra app di navigazione. Sul Desktop Head Unit invece funziona.
+On a real car, a sideloaded app may show up in Android Auto's app list but not in *Customize launcher*. It may also
+start by itself as the last used app and then become impossible to relaunch if you pick another navigation app. On
+the Desktop Head Unit it works.
 
-La spiegazione più plausibile, ricavata da un'analisi della comunità
-([Fermata, issue #846](https://github.com/AndreyPavlenko/Fermata/issues/846), riferita ad Android Auto 17.7 e non
-verificata ufficialmente da Google), è che Android Auto controlli quale **installatore** risulta registrato per
-l'app. "Origini sconosciute" varrebbe per le app multimediali ma non per quelle a template, come questa.
+The most plausible explanation, from a community analysis
+([Fermata, issue #846](https://github.com/AndreyPavlenko/Fermata/issues/846), referring to Android Auto 17.7 and not
+officially confirmed by Google), is that Android Auto checks which **installer** is recorded for the app.
+"Unknown sources" would apply to media apps but not to template apps like this one.
 
-Soluzioni, in ordine di pulizia:
+Solutions, from cleanest to least clean:
 
-1. **Play Store:** pubblicare l'app almeno nel canale di test interno della Play Console. Per i test personali è
-   la strada più solida, ma richiede un account sviluppatore.
-2. **Installazione con installatore del Play Store registrato.** Su un telefono dell'autore ha funzionato
-   installando l'APK con **KingInstaller** e **Shizuku** (variante ShizukuNext), che registrano il Play Store come
-   installatore. Sono strumenti di terze parti: usali solo se capisci cosa fanno, a tuo rischio. L'installatore
-   registrato si perde se l'app viene aggiornata in un altro modo, e in quel caso l'app può sparire di nuovo.
-   Per controllare l'installatore registrato:
+1. **Play Store:** publish the app at least on the Play Console internal testing track. For personal testing this is
+   the most solid route, but it requires a developer account.
+2. **Install with the Play Store recorded as installer.** On the author's phone it worked by installing the APK
+   with **KingInstaller** and **Shizuku** (ShizukuNext variant), which record the Play Store as the installer.
+   These are third-party tools: use them only if you understand what they do, at your own risk. The recorded
+   installer is lost if the app is updated in another way, and the app may then disappear again.
+   To check the recorded installer:
 
 ```
 adb shell dumpsys package com.offroadgauges | grep -E "installerPackageName|initiatingPackageName"
 ```
 
-   Deve risultare `installerPackageName=com.android.vending`.
-3. **Desktop Head Unit** di Google, per provare senza auto: non applica questi controlli.
+   It must show `installerPackageName=com.android.vending`.
+3. **Google's Desktop Head Unit**, to test without a car: it does not apply these checks.
 
-### 5. Primo avvio
-Apri l'app sul telefono, concedi i permessi (posizione e notifiche) e, per un funzionamento stabile con lo schermo
-spento, la posizione **"Consenti sempre"**. Poi collega il telefono all'auto, apri l'elenco app e scegli
-**Offroad Gauges**.
+### 5. First run
+Open the app on the phone, grant the permissions (location and notifications) and, for stable operation with the
+screen off, set location to **"Allow all the time"**. Then connect the phone to the car, open the app list and
+choose **Offroad Gauges**.
 
 ---
 
-## Struttura del progetto
+## Project structure
 
 ```
 OffroadGauges/
-├── build.gradle.kts            # plugin Gradle e Kotlin
+├── build.gradle.kts            # Gradle and Kotlin plugins
 ├── settings.gradle.kts
 ├── gradle.properties
-├── gradlew, gradlew.bat        # wrapper Gradle
-├── keystore.properties.example # modello per i dati di firma (il file reale non va versionato)
+├── gradlew, gradlew.bat        # Gradle wrapper
+├── keystore.properties.example # template for signing data (the real file must not be versioned)
 └── app/
-    ├── build.gradle.kts        # configurazione dell'app, dipendenze, firma release
+    ├── build.gradle.kts        # app configuration, dependencies, release signing
     └── src/main/
         ├── AndroidManifest.xml
-        ├── res/                # icone, stringhe, automotive_app_desc.xml
+        ├── res/                # icons, strings, automotive_app_desc.xml
         └── java/com/offroadgauges/
             ├── car/
-            │   ├── GaugeCarAppService.kt   # servizio Car App Library (entry point per Android Auto)
-            │   ├── GaugeSession.kt         # sessione: avvia sensori e servizio in primo piano
-            │   ├── GaugeScreen.kt          # NavigationTemplate, Surface, tocchi, swipe, area visibile
-            │   └── PermissionScreen.kt     # richiesta del permesso di posizione dall'auto
+            │   ├── GaugeCarAppService.kt   # Car App Library service (entry point for Android Auto)
+            │   ├── GaugeSession.kt         # session: starts sensors and the foreground service
+            │   ├── GaugeScreen.kt          # NavigationTemplate, Surface, touch, swipe, visible area
+            │   └── PermissionScreen.kt     # location permission request from the car
             ├── core/
-            │   ├── SensorHub.kt            # GPS, NMEA, barometro, inclinazione, azzeramento
-            │   ├── TelemetryService.kt     # foreground service di tipo "location"
-            │   ├── WeatherRepo.kt          # temperatura da Open-Meteo
-            │   ├── Damper.kt               # smorzatore "a glicerina" per lancette e valori
-            │   └── Prefs.kt                # impostazioni salvate (azzeramento, quadranti scelti, ecc.)
+            │   ├── SensorHub.kt            # GPS, NMEA, barometer, tilt, zeroing
+            │   ├── TelemetryService.kt     # foreground service of type "location"
+            │   ├── WeatherRepo.kt          # temperature from Open-Meteo
+            │   ├── Damper.kt               # "glycerin" damper for needles and values
+            │   └── Prefs.kt                # saved settings (zeroing, chosen gauges, etc.)
             ├── render/
-            │   └── GaugeRenderer.kt        # disegno dei quadranti, pagine, modalità 1/3 - 2/3 - intero
+            │   └── GaugeRenderer.kt        # gauge drawing, pages, 1/3 - 2/3 - full modes
             └── ui/
-                ├── MainActivity.kt         # schermata sul telefono: permessi, guida, scelta quadranti
-                └── PlacementGuideView.kt   # animazione che mostra come posare il telefono
+                ├── MainActivity.kt         # phone screen: permissions, guide, gauge selection
+                └── PlacementGuideView.kt   # animation showing how to place the phone
 ```
 
 ---
 
-## Compilare una release firmata
+## Building a signed release
 
-1. Genera un keystore **fuori** dalla cartella del progetto e fanne subito una copia di backup:
+1. Generate a keystore **outside** the project folder and make a backup copy right away:
 
 ```
 keytool -genkeypair -v -keystore offroadgauges.jks -alias offroadgauges -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-   `keytool` è nel JDK di Android Studio, cartella `jbr/bin`.
-2. Copia `keystore.properties.example` in `keystore.properties` (nella cartella principale del progetto) e compila i
-   valori. Il file è escluso da git: non va mai pubblicato.
-3. Costruisci la release: *Build > Generate Signed App Bundle / APK*, oppure `./gradlew assembleRelease`.
-   L'APK si trova in `app/build/outputs/apk/release/`.
+   `keytool` is in Android Studio's JDK, folder `jbr/bin`.
+2. Copy `keystore.properties.example` to `keystore.properties` (in the project root) and fill in the values. The
+   file is excluded from git: never publish it.
+3. Build the release: *Build > Generate Signed App Bundle / APK*, or `./gradlew assembleRelease`.
+   The APK is in `app/build/outputs/apk/release/`.
 
-Se `keystore.properties` non esiste, la build release esce non firmata e la build di debug funziona come sempre.
-Non perdere il keystore né le password: senza non si possono installare aggiornamenti sopra una versione già
-installata.
-
----
-
-## Limiti noti
-
-- Gli inclinometri risentono delle vibrazioni se il telefono non è fermo nel supporto: lo smorzamento stabilizza
-  gli aghi ma su fondi molto sconnessi le letture restano indicative.
-- La direzione della bussola arriva dal GPS: sotto circa 5 km/h non si aggiorna. Non usa la bussola magnetica.
-- La quota GPS ha un'incertezza di alcuni metri. La correzione di ripiego di 48 m vale per la Pianura Padana: in
-  altre zone conviene regolarla in `SensorHub.kt` oppure fare affidamento su Android 14 o successivi.
-- La temperatura richiede la rete dati e mostra il valore della stazione meteo più vicina, non un sensore dell'auto.
-- Il tocco sullo schermo e lo swipe funzionano solo su unità touch.
-- Il riconoscimento della visualizzazione a 1/3 e 2/3 si basa sull'area visibile comunicata da Android Auto: su
-  alcune auto potrebbe servire regolare le soglie in `GaugeRenderer.kt`.
-- Il servizio Car App accetta qualsiasi host (`HostValidator.ALLOW_ALL_HOSTS_VALIDATOR`): va bene per uso
-  personale, per una distribuzione pubblica va sostituito con un elenco di host fidati.
+If `keystore.properties` does not exist, the release build comes out unsigned and the debug build works as usual.
+Do not lose the keystore or its passwords: without them you cannot install updates over an already installed version.
 
 ---
 
-## Licenza
+## Known limitations
 
-Distribuito con licenza MIT: vedi il file [LICENSE](LICENSE).
+- The inclinometers are affected by vibration if the phone is not firmly held in its mount: damping steadies the
+  needles, but on very rough ground the readings remain indicative.
+- The compass heading comes from GPS: below about 5 km/h it does not update. It does not use the magnetic compass.
+- GPS altitude has an uncertainty of a few meters. The 48 m fallback correction is valid for the Po Plain: elsewhere
+  adjust it in `SensorHub.kt` or rely on Android 14 or later.
+- Temperature needs a data connection and shows the value of the nearest weather station, not a car sensor.
+- Touch and swipe only work on touch units.
+- Detection of the 1/3 and 2/3 views relies on the visible area reported by Android Auto: on some cars the
+  thresholds in `GaugeRenderer.kt` may need adjusting.
+- The Car App service accepts any host (`HostValidator.ALLOW_ALL_HOSTS_VALIDATOR`): fine for personal use, but it
+  must be replaced with a list of trusted hosts for public distribution.
+
+---
+
+## License
+
+Distributed under the MIT license: see the [LICENSE](LICENSE) file.

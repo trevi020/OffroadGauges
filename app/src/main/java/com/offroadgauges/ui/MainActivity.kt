@@ -24,8 +24,8 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * Schermata sul telefono: permessi, stato dei sensori, guida animata di posizionamento,
- * lettura live degli inclinometri e azzeramento di prova.
+ * Phone screen: permissions, sensor status, animated placement guide,
+ * live inclinometer readout and a test zero-calibration.
  */
 class MainActivity : Activity() {
 
@@ -65,65 +65,65 @@ class MainActivity : Activity() {
             }
 
         root.addView(tv("Offroad Gauges", 26f, gold, true))
-        root.addView(tv("Strumenti da fuoristrada digitali per Android Auto", 14f, muted, top = 2))
+        root.addView(tv("Digital off-road gauges for Android Auto", 14f, muted, top = 2))
 
         status = tv("", 14f, ink, top = 16)
         root.addView(status)
 
         permBtn = Button(this).apply {
-            text = "Concedi permessi (posizione e notifiche)"
+            text = "Grant permissions (location and notifications)"
             setOnClickListener { requestBasePermissions() }
         }
         root.addView(permBtn)
 
         bgBtn = Button(this).apply {
-            text = "Posizione \"sempre\" (consigliato per Android Auto)"
+            text = "Location \"always\" (recommended for Android Auto)"
             setOnClickListener { requestBackgroundLocation() }
         }
         root.addView(bgBtn)
 
-        root.addView(tv("Come posizionare il telefono", 18f, gold, true, top = 22))
+        root.addView(tv("How to place the phone", 18f, gold, true, top = 22))
         val guide = PlacementGuideView(this)
         root.addView(guide, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(290)).apply { topMargin = dp(8) })
 
         root.addView(
             tv(
-                "1. Appoggia il telefono completamente piatto, schermo verso l'alto, sul supporto o sul piano di ricarica.\n" +
-                    "2. Il lato lungo deve essere parallelo all'asse dell'auto, con il bordo superiore (fotocamera/notch) verso il parabrezza.\n" +
-                    "3. Parcheggia l'auto su un piano orizzontale e tienila ferma.\n" +
-                    "4. Premi AZZERA 0° dallo schermo di Android Auto (schermata Assetto) oppure da qui sotto.\n" +
-                    "5. Se il telefono e' girato di 180° (bordo superiore verso di te) attiva l'opzione qui sotto, poi azzera di nuovo.\n" +
-                    "6. Se il supporto e' inclinato di serie va bene: l'azzeramento compensa fino a 25°.",
+                "1. Lay the phone completely flat, screen up, on its mount or charging pad.\n" +
+                    "2. The long side must be parallel to the car's axis, with the top edge (camera/notch) toward the windshield.\n" +
+                    "3. Park the car on level ground and keep it still.\n" +
+                    "4. Press ZERO 0° on the Android Auto screen (Attitude page) or from here below.\n" +
+                    "5. If the phone is rotated 180° (top edge toward you) enable the option below, then zero again.\n" +
+                    "6. A mount that is tilted by design is fine: zeroing compensates up to 25°.",
                 14f, ink, top = 12
             )
         )
 
         val flip = CheckBox(this).apply {
-            text = "Telefono girato di 180° (bordo superiore verso il conducente)"
+            text = "Phone rotated 180° (top edge toward the driver)"
             setTextColor(ink)
             isChecked = com.offroadgauges.core.Prefs(this@MainActivity).rotated180
             setOnCheckedChangeListener { _, checked ->
                 SensorHub.phoneRotated180 = checked
-                Toast.makeText(this@MainActivity, "Orientamento cambiato: azzera di nuovo", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Orientation changed: zero again", Toast.LENGTH_SHORT).show()
             }
         }
         root.addView(flip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
 
-        // ---- scelta dei quadranti per la visualizzazione parziale ----------------------------------
+        // ---- choice of gauges for the partial display modes ----------------------------------------
         val prefs = com.offroadgauges.core.Prefs(this)
-        val names = arrayOf("Temperatura", "Bussola", "Orologio", "Altimetro", "Rollio", "Beccheggio")
+        val names = arrayOf("Temperature", "Compass", "Clock", "Altimeter", "Roll", "Pitch")
 
-        root.addView(tv("Visualizzazione parziale", 18f, gold, true, top = 22))
+        root.addView(tv("Partial view", 18f, gold, true, top = 22))
         root.addView(
             tv(
-                "Quando l'app e' affiancata ad altre app (per esempio la musica) mostra solo i quadranti scelti qui, " +
-                    "senza pagine. Se scegli rollio o beccheggio compare anche il pulsante AZZERA 0°.",
+                "When the app is shown next to other apps (for example music) it displays only the gauges chosen here, " +
+                    "without pages. If you choose roll or pitch the ZERO 0° button also appears.",
                 13f, muted, top = 4
             )
         )
 
-        root.addView(tv("Con 2 quadranti (circa 2/3 dello schermo): scegline 2", 15f, ink, true, top = 12))
-        val two = ArrayDeque<Int>()                       // il piu' vecchio per primo
+        root.addView(tv("With 2 gauges (about 2/3 of the screen): pick 2", 15f, ink, true, top = 12))
+        val two = ArrayDeque<Int>()                       // the oldest first
         val firstTwo = prefs.twoA
         var secondTwo = prefs.twoB
         if (secondTwo == firstTwo) secondTwo = (firstTwo + 1) % 6
@@ -147,8 +147,8 @@ class MainActivity : Activity() {
                         twoBoxes[old].isChecked = false
                     }
                 } else {
-                    cb.isChecked = true   // ne servono sempre 2: per cambiare seleziona un altro quadrante
-                    Toast.makeText(this, "Servono 2 quadranti: seleziona un altro per sostituirlo", Toast.LENGTH_SHORT).show()
+                    cb.isChecked = true   // always 2 are needed: to change, select another gauge
+                    Toast.makeText(this, "Two gauges are required: select another one to replace it", Toast.LENGTH_SHORT).show()
                 }
                 updating = false
                 val sorted = two.sorted()
@@ -158,7 +158,7 @@ class MainActivity : Activity() {
             root.addView(cb)
         }
 
-        root.addView(tv("Con 1 quadrante (circa 1/3 dello schermo): scegli quale", 15f, ink, true, top = 14))
+        root.addView(tv("With 1 gauge (about 1/3 of the screen): pick which", 15f, ink, true, top = 14))
         val rg = android.widget.RadioGroup(this)
         for (i in names.indices) {
             val rb = android.widget.RadioButton(this)
@@ -171,18 +171,18 @@ class MainActivity : Activity() {
         rg.setOnCheckedChangeListener { _, checkedId -> prefs.one = checkedId - 100 }
         root.addView(rg)
 
-        root.addView(tv("Lettura live", 18f, gold, true, top = 18))
+        root.addView(tv("Live readout", 18f, gold, true, top = 18))
         live = tv("", 22f, ink, true, top = 6).apply { typeface = Typeface.MONOSPACE }
         root.addView(live)
 
         val zero = Button(this).apply {
-            text = "AZZERA 0° ORA"
+            text = "ZERO 0° NOW"
             setOnClickListener {
                 val msg = when (SensorHub.calibrate()) {
-                    SensorHub.CalResult.OK -> "Inclinometri azzerati"
-                    SensorHub.CalResult.MOVING -> "Ferma l'auto per azzerare"
-                    SensorHub.CalResult.TOO_TILTED -> "Telefono non in piano (oltre 25°)"
-                    SensorHub.CalResult.NO_SENSOR -> "Sensore di inclinazione non disponibile"
+                    SensorHub.CalResult.OK -> "Inclinometers zeroed"
+                    SensorHub.CalResult.MOVING -> "Stop the car to zero"
+                    SensorHub.CalResult.TOO_TILTED -> "Phone not level (over 25°)"
+                    SensorHub.CalResult.NO_SENSOR -> "Tilt sensor not available"
                 }
                 Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
             }
@@ -191,8 +191,8 @@ class MainActivity : Activity() {
 
         root.addView(
             tv(
-                "Collega il telefono ad Android Auto, apri l'elenco app e scegli Offroad Gauges. " +
-                    "Per il test fuori dall'auto usa il Desktop Head Unit.",
+                "Connect the phone to Android Auto, open the app list and choose Offroad Gauges. " +
+                    "To test outside the car use the Desktop Head Unit.",
                 13f, muted, top = 18
             )
         )
@@ -217,7 +217,7 @@ class MainActivity : Activity() {
         super.onPause()
     }
 
-    // ---- permessi --------------------------------------------------------------------------
+    // ---- permissions -----------------------------------------------------------------------
 
     private fun hasFineLocation() =
         checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -230,11 +230,11 @@ class MainActivity : Activity() {
 
     private fun requestBackgroundLocation() {
         when {
-            Build.VERSION.SDK_INT < 29 -> Toast.makeText(this, "Non necessario su questa versione di Android", Toast.LENGTH_SHORT).show()
+            Build.VERSION.SDK_INT < 29 -> Toast.makeText(this, "Not needed on this Android version", Toast.LENGTH_SHORT).show()
             !hasFineLocation() -> requestBasePermissions()
             Build.VERSION.SDK_INT == 29 -> requestPermissions(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), 2)
             else -> {
-                Toast.makeText(this, "Scegli Autorizzazioni > Posizione > Consenti sempre", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Choose Permissions > Location > Allow all the time", Toast.LENGTH_LONG).show()
                 startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
             }
         }
@@ -247,14 +247,14 @@ class MainActivity : Activity() {
         refreshStatus()
     }
 
-    // ---- stato -----------------------------------------------------------------------------
+    // ---- status ----------------------------------------------------------------------------
 
     private fun refreshStatus() {
         val loc = hasFineLocation()
         val sb = StringBuilder()
-        sb.append("Posizione GPS: ").append(if (loc) "permesso concesso" else "PERMESSO MANCANTE").append('\n')
-        sb.append("Sensore inclinazione: ").append(SensorHub.tiltSensorName).append('\n')
-        sb.append("Barometro: ").append(if (SensorHub.hasBarometer) "presente" else "assente (pressione non disponibile)")
+        sb.append("GPS location: ").append(if (loc) "permission granted" else "PERMISSION MISSING").append('\n')
+        sb.append("Tilt sensor: ").append(SensorHub.tiltSensorName).append('\n')
+        sb.append("Barometro: ").append(if (SensorHub.hasBarometer) "present" else "absent (pressure not available)")
         status.text = sb.toString()
         permBtn.visibility = if (loc) View.GONE else View.VISIBLE
         bgBtn.visibility = if (Build.VERSION.SDK_INT >= 29 && loc) View.VISIBLE else View.GONE
@@ -266,8 +266,8 @@ class MainActivity : Activity() {
         fun f(v: Float?) = if (v == null) "  --" else String.format(Locale.US, "%+5.1f°", v)
         val pr = SensorHub.pressureAvg
         val alt = SensorHub.altitude
-        live.text = "Rollio      ${f(r)}\nBeccheggio  ${f(p)}\n" +
-            "Quota   ${if (alt == null) "--" else "${alt.roundToInt()} m"}\n" +
-            "Pressione ${if (pr == null) "--" else "${pr.roundToInt()} hPa"}"
+        live.text = "Roll      ${f(r)}\nPitch     ${f(p)}\n" +
+            "Altitude ${if (alt == null) "--" else "${alt.roundToInt()} m"}\n" +
+            "Pressure ${if (pr == null) "--" else "${pr.roundToInt()} hPa"}"
     }
 }

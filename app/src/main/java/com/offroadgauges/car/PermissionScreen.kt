@@ -8,7 +8,7 @@ import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.ParkedOnlyOnClickListener
 import androidx.car.app.model.Template
 
-/** Mostrata solo se il permesso di posizione non e' ancora stato concesso. */
+/** Shown only if the location permission has not been granted yet. */
 class PermissionScreen(
     carContext: CarContext,
     private val onGranted: () -> Unit
@@ -16,7 +16,7 @@ class PermissionScreen(
 
     override fun onGetTemplate(): Template {
         val ask = Action.Builder()
-            .setTitle("Concedi sul telefono")
+            .setTitle("Grant on the phone")
             .setOnClickListener(ParkedOnlyOnClickListener.create {
                 carContext.requestPermissions(listOf(Manifest.permission.ACCESS_FINE_LOCATION)) { granted, _ ->
                     if (granted.isNotEmpty()) onGranted()
@@ -24,8 +24,8 @@ class PermissionScreen(
             })
             .build()
 
-        return MessageTemplate.Builder("Per bussola, altimetro e meteo serve il permesso di posizione.")
-            .setTitle("Permesso necessario")
+        return MessageTemplate.Builder("Compass, altimeter and weather need the location permission.")
+            .setTitle("Permission required")
             .setHeaderAction(Action.APP_ICON)
             .addAction(ask)
             .build()

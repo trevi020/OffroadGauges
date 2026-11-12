@@ -21,11 +21,11 @@ import com.offroadgauges.core.Prefs
 import com.offroadgauges.render.GaugeRenderer
 
 /**
- * Schermata principale: un NavigationTemplate (l'unico che da' accesso alla Surface) con il
- * rendering dei gauge sulla Surface e due pulsanti nella action strip:
- *  - cambia schermata (Ambiente / Assetto)
- *  - azzera gli inclinometri
- * Le stesse azioni sono anche disegnate sulla Surface e rispondono al tocco (onClick).
+ * Main screen: a NavigationTemplate (the only one that gives access to the Surface) with the
+ * gauge rendering on the Surface and two buttons in the action strip:
+ *  - switch screen (Ambient / Attitude)
+ *  - zero the inclinometers
+ * The same actions are also drawn on the Surface and respond to touch (onClick).
  */
 class GaugeScreen(carContext: CarContext) : Screen(carContext) {
 
@@ -46,7 +46,7 @@ class GaugeScreen(carContext: CarContext) : Screen(carContext) {
         }
 
         override fun onVisibleAreaChanged(visibleArea: Rect) {
-            // Area non coperta dalle schede affiancate (musica ecc.): decide la modalita' 1/3 - 2/3 - intero.
+            // Area not covered by the side-by-side cards (music etc.): decides the 1/3 - 2/3 - full mode.
             renderer.setVisibleArea(visibleArea)
         }
 
@@ -54,7 +54,7 @@ class GaugeScreen(carContext: CarContext) : Screen(carContext) {
             renderer.onClick(x, y)
         }
 
-        // Swipe tra le due pagine (richiede Action.PAN nella map action strip)
+        // Swipe between the two pages (requires Action.PAN in the map action strip)
         override fun onScroll(distanceX: Float, distanceY: Float) {
             renderer.onScroll(distanceX)
         }
@@ -83,8 +83,8 @@ class GaugeScreen(carContext: CarContext) : Screen(carContext) {
             .build()
 
     override fun onGetTemplate(): Template {
-        // NavigationTemplate vuole almeno un'azione nella action strip: ne metto una sola, con icona
-        // trasparente (cambia pagina se toccata). Cambio pagina e azzeramento sono sulla Surface.
+        // NavigationTemplate requires at least one action in the action strip: only one is added, with a
+        // transparent icon (switches page when touched). Page switching and zeroing are on the Surface.
         val strip = ActionStrip.Builder()
             .addAction(
                 Action.Builder()
@@ -94,8 +94,8 @@ class GaugeScreen(carContext: CarContext) : Screen(carContext) {
             )
             .build()
 
-        // Action.PAN serve ad Android Auto per consegnare scroll/fling (swipe) alla Surface.
-        // Su touchscreen il pulsante Pan non viene mostrato.
+        // Action.PAN lets Android Auto deliver scroll/fling (swipe) events to the Surface.
+        // On touchscreens the Pan button is not shown.
         val mapStrip = ActionStrip.Builder()
             .addAction(Action.PAN)
             .build()

@@ -38,7 +38,7 @@ class GaugeSession : Session() {
             ContextCompat.startForegroundService(carContext, Intent(carContext, TelemetryService::class.java))
             serviceStarted = true
         } catch (e: Exception) {
-            // Avvio in background non consentito: i sensori restano attivi tramite la Session.
+            // Background start not allowed: the sensors stay active through the Session.
         }
     }
 
