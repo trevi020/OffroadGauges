@@ -811,21 +811,21 @@ class GaugeRenderer(private val prefs: Prefs) {
     private fun drawCarSide(c: Canvas) {
         val arch = fill(0xFF222A3C.toInt())
         path.reset()
-        path.moveTo(-84f, -16f); path.lineTo(-84f, -46f); path.lineTo(-6f, -46f)
-        path.lineTo(-6f, -36f); path.lineTo(20f, -36f); path.lineTo(20f, -46f)
-        path.lineTo(74f, -46f); path.lineTo(80f, -40f); path.lineTo(80f, -16f); path.close()
+        path.moveTo(-84f, -22f); path.lineTo(-84f, -62f); path.lineTo(-6f, -62f)
+        path.lineTo(-6f, -48f); path.lineTo(20f, -48f); path.lineTo(20f, -58f)
+        path.lineTo(74f, -58f); path.lineTo(80f, -50f); path.lineTo(80f, -22f); path.close()
         c.drawPath(path, fill(CAR))
         // wheel arch
         c.drawCircle(-48f, -18f, 22f, arch)
         c.drawCircle(52f, -18f, 22f, arch)
         // upright windshield, tilted slightly backward
-        c.drawLine(22f, -46f, 17f, -72f, stroke(CAR2, 4f, Paint.Cap.ROUND))
+        c.drawLine(22f, -58f, 17f, -96f, stroke(CAR2, 4f, Paint.Cap.ROUND))
         // seat backrest
-        rect.set(-34f, -60f, -24f, -38f); c.drawRoundRect(rect, 3f, 3f, fill(CAR2))
+        rect.set(-34f, -78f, -24f, -50f); c.drawRoundRect(rect, 3f, 3f, fill(CAR2))
         // jerry can at the rear
-        rect.set(-93f, -42f, -84f, -22f); c.drawRoundRect(rect, 2f, 2f, fill(CAR2))
+        rect.set(-93f, -58f, -84f, -32f); c.drawRoundRect(rect, 2f, 2f, fill(CAR2))
         // round front headlight
-        c.drawCircle(74f, -36f, 4.5f, fill(0xFFFFE9A8.toInt()))
+        c.drawCircle(74f, -48f, 4.5f, fill(0xFFFFE9A8.toInt()))
         // wheels
         for (x in floatArrayOf(-48f, 52f)) {
             c.drawCircle(x, -18f, 18f, fill(TIRE))
